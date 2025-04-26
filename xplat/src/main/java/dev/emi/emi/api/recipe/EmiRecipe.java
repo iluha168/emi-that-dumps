@@ -1,13 +1,30 @@
 package dev.emi.emi.api.recipe;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.google.common.reflect.TypeToken;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
+import dev.emi.emi.api.widget.ButtonWidget;
+import dev.emi.emi.api.widget.DrawableWidget;
+import dev.emi.emi.api.widget.SlotWidget;
+import dev.emi.emi.api.widget.TextWidget;
+import dev.emi.emi.api.widget.TextureWidget;
+import dev.emi.emi.api.widget.TooltipWidget;
+import dev.emi.emi.api.widget.Widget;
 import dev.emi.emi.api.widget.WidgetHolder;
+import dev.emi.emi.jemi.JemiRecipe.JemiWidget;
+import dev.emi.emi.widget.RecipeButtonWidget;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.util.Identifier;
 
@@ -101,5 +118,50 @@ public interface EmiRecipe {
 	 */
 	default @Nullable Recipe<?> getBackingRecipe() {
 		return EmiPort.getRecipe(getId());
+	}
+
+	class Serializer implements JsonSerializer<EmiRecipe> {
+		@Override
+		public JsonElement serialize(EmiRecipe recipe, Type typeOfSrc, JsonSerializationContext context) {
+			JsonObject jsonObject = new JsonObject();
+			if (recipe.getId() != null)
+				jsonObject.addProperty("id", recipe.getId().toString());
+			Type ingredientListType = new TypeToken<List<EmiIngredient>>(){}.getType();
+			jsonObject.add("inputs", context.serialize(recipe.getInputs(), ingredientListType));
+			jsonObject.add("catalysts", context.serialize(recipe.getCatalysts(), ingredientListType));
+			Type stackListType = new TypeToken<List<EmiStack>>(){}.getType();
+			jsonObject.add("outputs", context.serialize(recipe.getOutputs(), stackListType));
+			JsonArray jsonTexts = new JsonArray();
+			recipe.addWidgets(new WidgetHolder() {
+				@Override public int getWidth() { return 10000000; }
+				@Override public int getHeight() { return 10000000; }
+
+				@Override
+				public <T extends Widget> T add(T widget) {
+					if (widget instanceof TextWidget textWidget) {
+						StringBuilder textBuilder = new StringBuilder();
+						textWidget.text.accept((i, s, c) -> {
+							textBuilder.appendCodePoint(c);
+							return true;
+						});
+						jsonTexts.add(textBuilder.toString());
+					} else if (widget instanceof SlotWidget
+							|| widget instanceof RecipeButtonWidget
+							|| widget instanceof TextureWidget
+							|| widget instanceof JemiWidget
+							|| widget instanceof TooltipWidget
+							|| widget.getClass() == ButtonWidget.class
+							|| widget.getClass() == DrawableWidget.class
+					) {} else {
+						// EmiLog.info("Recipe "+recipe.getId()+" has added an unknown widget: "+widget.toString());
+					}
+					return widget;
+				}
+				
+			});
+			if (!jsonTexts.isEmpty())
+				jsonObject.add("texts", jsonTexts);
+			return jsonObject;
+		}
 	}
 }

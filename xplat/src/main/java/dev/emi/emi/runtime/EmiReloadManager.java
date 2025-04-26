@@ -1,15 +1,22 @@
 package dev.emi.emi.runtime;
 
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Consumer;
 
 import com.google.common.collect.Lists;
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.EmiInitRegistry;
 import dev.emi.emi.api.EmiRegistry;
 import dev.emi.emi.api.recipe.EmiRecipe;
+import dev.emi.emi.api.recipe.EmiRecipeCategory;
+import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.bom.BoM;
 import dev.emi.emi.jemi.JemiPlugin;
 import dev.emi.emi.platform.EmiAgnos;
@@ -29,6 +36,7 @@ import dev.emi.emi.screen.EmiScreenManager;
 import dev.emi.emi.search.EmiSearch;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
+import org.apache.commons.io.output.FileWriterWithEncoding;
 
 public class EmiReloadManager {
 	private static int loadedResourcesMask = 0;
@@ -114,6 +122,7 @@ public class EmiReloadManager {
 
 		@Override
 		public void run() {
+			EmiRegistry registry = null;
 			int retries = 3;
 			outer:
 			do {
@@ -179,7 +188,7 @@ public class EmiReloadManager {
 					if (restart) {
 						continue;
 					}
-					EmiRegistry registry = new EmiRegistryImpl();
+					registry = new EmiRegistryImpl();
 					
 					for (EmiPluginContainer container : plugins) {
 						step(EmiPort.literal("Loading plugin from " + container.id()), 10_000);
@@ -235,7 +244,35 @@ public class EmiReloadManager {
 					}
 				}
 			} while (restart);
+			// Dump EMI registry to files
+			long dumpStart = System.currentTimeMillis();
+			Gson gson = new GsonBuilder()
+				.excludeFieldsWithoutExposeAnnotation()
+				.registerTypeHierarchyAdapter(EmiIngredient.class, new EmiIngredientSerializers())
+				.registerTypeAdapter(EmiRecipeCategory.class, new EmiRecipeCategory.Serializer())
+				.registerTypeHierarchyAdapter(EmiRecipe.class, new EmiRecipe.Serializer())
+				.registerTypeAdapter(EmiStackList.class, new EmiStackList.Serializer())
+				.create();
+			new File("logs/emi/categories/").mkdirs();
+			for (EmiRecipeCategory category : EmiRecipes.manager.getCategories()) {
+				dumpJsonToFile("logs/emi/categories/"+category.getId(), gson, category, EmiRecipeCategory.class);
+			}
+			if (!EmiStackList.stacks.isEmpty()) {
+				dumpJsonToFile("logs/emi/stacks", gson, new EmiStackList(), EmiStackList.class);
+			}
+			EmiLog.info("Dumped EMI in " + (System.currentTimeMillis() - dumpStart) + "ms");
 			thread = null;
+		}
+
+		private void dumpJsonToFile(String pathWithoutExtension, Gson gson, Object src, Type typeOfSrc) {
+			try (FileWriterWithEncoding writer = new FileWriterWithEncoding(
+				pathWithoutExtension+".json",
+				StandardCharsets.UTF_8
+			)) {
+				gson.toJson(src, typeOfSrc, writer);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		private final static int entrypointPriority(EmiPluginContainer container) {

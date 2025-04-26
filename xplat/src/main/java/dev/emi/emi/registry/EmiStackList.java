@@ -1,5 +1,7 @@
 package dev.emi.emi.registry;
 
+import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,9 +13,13 @@ import java.util.function.Supplier;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.reflect.TypeToken;
 
 import dev.emi.emi.EmiPort;
-import dev.emi.emi.api.stack.Comparison;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiRegistryAdapter;
 import dev.emi.emi.api.stack.EmiStack;
@@ -341,4 +347,22 @@ public class EmiStackList {
 			return 0;
 		}
 	}
+
+	public static class Serializer implements JsonSerializer<EmiStackList> {
+		@Override
+		public JsonElement serialize(EmiStackList src, Type typeOfSrc, JsonSerializationContext context) {
+			JsonObject stackLists = new JsonObject();
+			Type stackListType = new TypeToken<List<EmiStack>>(){}.getType();
+			{ // All stacks including the hidden ones
+				stackLists.add("all", context.serialize(EmiStackList.stacks, stackListType));
+			}{// ONLY the hidden stacks
+				List<EmiStack> hiddenStacks = new ArrayList<>(EmiStackList.stacks);
+				hiddenStacks.removeAll(EmiStackList.filteredStacks);
+				stackLists.add("hidden", context.serialize(hiddenStacks, stackListType));
+			}
+			// visible stacks are computable, not adding
+			return stackLists;
+		}
+	}
+
 }

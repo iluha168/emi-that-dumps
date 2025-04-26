@@ -1,12 +1,16 @@
 package dev.emi.emi.registry;
 
+import java.lang.reflect.Type;
 import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Maps;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
 
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
@@ -15,7 +19,7 @@ import dev.emi.emi.runtime.EmiLog;
 import net.minecraft.util.JsonHelper;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class EmiIngredientSerializers {
+public class EmiIngredientSerializers implements JsonSerializer<EmiIngredient> {
 	public static final Map<Class<?>, EmiIngredientSerializer<?>> BY_CLASS = Maps.newHashMap();
 	public static final Map<String, EmiIngredientSerializer<?>> BY_TYPE = Maps.newHashMap();
 
@@ -25,7 +29,10 @@ public class EmiIngredientSerializers {
 	}
 
 	public static @Nullable JsonElement serialize(EmiIngredient ingredient) {
-		if (ingredient == null || !BY_CLASS.containsKey(ingredient.getClass())) {
+		if (ingredient == null)
+			return JsonNull.INSTANCE;
+		if (!BY_CLASS.containsKey(ingredient.getClass())) {
+			EmiLog.error("No serializer for the "+ingredient.getClass().toString()+" ingredient type");
 			return null;
 		}
 		try {
@@ -34,6 +41,11 @@ public class EmiIngredientSerializers {
 			EmiLog.error("Exception serializing stack " + ingredient, e);
 			return null;
 		}
+	}
+
+	@Override
+	public JsonElement serialize(EmiIngredient src, Type typeOfSrc, JsonSerializationContext context) {
+		return serialize(src);
 	}
 
 	public static EmiIngredient deserialize(JsonElement element) {

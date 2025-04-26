@@ -7,7 +7,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import com.google.common.collect.Lists;
-
 import dev.emi.emi.api.EmiDragDropHandler;
 import dev.emi.emi.api.EmiExclusionArea;
 import dev.emi.emi.api.EmiRegistry;
@@ -151,4 +150,5 @@ public class EmiRegistryImpl implements EmiRegistry {
 	public void addRecipeDecorator(EmiRecipeDecorator decorator) {
 		EmiRecipes.decorators.add(decorator);
 	}
+
 }

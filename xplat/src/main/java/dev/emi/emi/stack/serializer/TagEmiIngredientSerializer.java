@@ -5,8 +5,6 @@ import java.util.regex.Pattern;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
@@ -52,25 +50,16 @@ public class TagEmiIngredientSerializer implements EmiIngredientSerializer<TagEm
 
 	@Override
 	public JsonElement serialize(TagEmiIngredient stack) {
-		if (stack.getAmount() == 1 && stack.getChance() == 1) {
-			String type = switch(stack.key.registry().getValue().toString()) {
-				case "minecraft:item" -> "item";
-				case "minecraft:fluid" -> "fluid";
-				default -> null;
-			};
-			return new JsonPrimitive("#" + type + ":" + stack.key.id());
-		} else {
-			JsonObject json = new JsonObject();
-			json.addProperty("type", "tag");
-			json.addProperty("registry", stack.key.registry().getValue().toString());
-			json.addProperty("id", stack.key.id().toString());
-			if (stack.getAmount() != 1) {
-				json.addProperty("amount", stack.getAmount());
-			}
-			if (stack.getChance() != 1) {
-				json.addProperty("chance", stack.getChance());
-			}
-			return json;
+		JsonObject json = new JsonObject();
+		json.addProperty("type", getType());
+		json.addProperty("registry", stack.key.registry().getValue().toString());
+		json.addProperty("id", stack.key.id().toString());
+		if (stack.getAmount() != 1) {
+			json.addProperty("amount", stack.getAmount());
 		}
+		if (stack.getChance() != 1) {
+			json.addProperty("chance", stack.getChance());
+		}
+		return json;
 	}
 }

@@ -1,7 +1,16 @@
 package dev.emi.emi.api.recipe;
 
+import java.lang.reflect.Type;
 import java.util.Comparator;
 import java.util.List;
+
+import com.google.common.reflect.TypeToken;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import dev.emi.emi.api.stack.EmiIngredient;
+import dev.emi.emi.registry.EmiRecipes;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -83,5 +92,18 @@ public class EmiRecipeCategory implements EmiRenderable {
 
 	public @Nullable Comparator<EmiRecipe> getSort() {
 		return sorter;
+	}
+
+	public static class Serializer implements JsonSerializer<EmiRecipeCategory> {
+		@Override
+		public JsonElement serialize(EmiRecipeCategory category, Type typeOfSrc, JsonSerializationContext context) {
+			JsonObject jsonObject = new JsonObject();
+			jsonObject.addProperty("id", category.getId().toString());
+			Type workstationsListType = new TypeToken<List<EmiIngredient>>(){}.getType();
+			jsonObject.add("workstations", context.serialize(EmiRecipes.manager.getWorkstations(category), workstationsListType));
+			Type recipeListType = new TypeToken<List<EmiRecipe>>(){}.getType();
+			jsonObject.add("recipes", context.serialize(EmiRecipes.manager.getRecipes(category), recipeListType));
+			return jsonObject;
+		}
 	}
 }

@@ -6,7 +6,6 @@ import java.util.function.Function;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.Lists;
-
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.registry.EmiComparisonDefaults;
 import dev.emi.emi.screen.tooltip.RemainderTooltipComponent;
@@ -38,6 +37,10 @@ public abstract class EmiStack implements EmiIngredient {
 
 	public EmiStack getRemainder() {
 		return remainder;
+	}
+
+	public Comparison getComparison() {
+		return comparison;
 	}
 
 	public EmiStack setRemainder(EmiStack stack) {

@@ -4,9 +4,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonPrimitive;
-
 import dev.emi.emi.EmiPort;
 import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStack;
@@ -72,38 +71,34 @@ public interface EmiStackSerializer<T extends EmiStack> extends EmiIngredientSer
 
 	@Override
 	default JsonElement serialize(T stack) {
-		if (stack.getAmount() == 1 && stack.getChance() == 1 && stack.getRemainder().isEmpty()) {
-			String s = getType() + ":" + stack.getId();
-			if (stack.hasNbt()) {
-				s += stack.getNbt().asString();
-			}
-			return new JsonPrimitive(s);
-		} else {
-			JsonObject json = new JsonObject();
+		if (stack.isEmpty())
+			return JsonNull.INSTANCE;
+		JsonObject json = new JsonObject();
+		if (getType() != null)
 			json.addProperty("type", getType());
-			json.addProperty("id", stack.getId().toString());
-			if (stack.hasNbt()) {
-				json.addProperty("nbt", stack.getNbt().asString());
-			}
-			if (stack.getAmount() != 1) {
-				json.addProperty("amount", stack.getAmount());
-			}
-			if (stack.getChance() != 1) {
-				json.addProperty("chance", stack.getChance());
-			}
-			if (!stack.getRemainder().isEmpty()) {
-				EmiStack remainder = stack.getRemainder();
-				if (!remainder.getRemainder().isEmpty()) {
-					remainder = remainder.copy().setRemainder(EmiStack.EMPTY);
-				}
-				if (remainder.getRemainder().isEmpty()) {
-					JsonElement remainderElement = EmiIngredientSerializer.getSerialized(remainder);
-					if (remainderElement != null) {
-						json.add("remainder", remainderElement);
-					}
-				}
-			}
-			return json;
+		json.addProperty("id", stack.getId().toString());
+		if (stack.hasNbt()) {
+			json.addProperty("nbt", stack.getNbt().asString());
 		}
+		if (stack.getAmount() != 1) {
+			json.addProperty("amount", stack.getAmount());
+		}
+		if (stack.getChance() != 1) {
+			json.addProperty("chance", stack.getChance());
+		}
+		if (!stack.getRemainder().isEmpty()) {
+			EmiStack remainder = stack.getRemainder();
+			if (!remainder.getRemainder().isEmpty()) {
+				remainder = remainder.copy().setRemainder(EmiStack.EMPTY);
+			}
+			if (remainder.getRemainder().isEmpty()) {
+				JsonElement remainderElement = EmiIngredientSerializer.getSerialized(remainder);
+				if (remainderElement != null) {
+					json.add("remainder", remainderElement);
+				}
+			}
+		}
+		return json;
 	}
+
 }

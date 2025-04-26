@@ -1,7 +1,15 @@
 package dev.emi.emi.api.stack;
 
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.List;
+
+import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSerializationContext;
+import com.google.gson.JsonSerializer;
+import com.google.gson.reflect.TypeToken;
 
 import dev.emi.emi.api.render.EmiRenderable;
 import dev.emi.emi.registry.EmiTags;

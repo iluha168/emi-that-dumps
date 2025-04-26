@@ -23,4 +23,5 @@ public interface EmiRecipeManager {
 	List<EmiRecipe> getRecipesByInput(EmiStack stack);
 
 	List<EmiRecipe> getRecipesByOutput(EmiStack stack);
+
 }

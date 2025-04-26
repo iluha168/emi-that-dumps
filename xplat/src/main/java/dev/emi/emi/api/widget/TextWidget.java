@@ -7,7 +7,7 @@ import net.minecraft.text.OrderedText;
 
 public class TextWidget extends Widget {
 	private static final MinecraftClient CLIENT = MinecraftClient.getInstance();
-	protected final OrderedText text;
+	public final OrderedText text;
 	protected final int x, y;
 	protected final int color;
 	protected final boolean shadow;
